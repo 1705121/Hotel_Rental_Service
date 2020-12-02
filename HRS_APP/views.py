@@ -145,19 +145,6 @@ def signupSubmit(request):
 
        
         
-class ProfileView(generic.TemplateView):
-    template_name = 'profile.html'
-    title = "Profile"
-    extra_context = {'title': title}
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if self.request.user.is_authenticated:
-            context['information'] = get_object_or_404(Staff, user=self.request.user)
-            context['user_information'] = self.request.user
-        else:
-            raise Http404("Your are not logged in.")
-        return context
 
 
 class ReservationListView(PermissionRequiredMixin, generic.ListView, generic.FormView):
