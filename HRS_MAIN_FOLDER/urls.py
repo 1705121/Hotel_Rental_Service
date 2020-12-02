@@ -23,6 +23,10 @@ urlpatterns = [
     path('submit',HRS_APP_views.submit, name='submit'),
     path('signup',HRS_APP_views.signup, name='signup'),
     path('signupSubmit',HRS_APP_views.signupSubmit, name='submit'),
+    path('rooms/', views.RoomListView.as_view(), name='rooms'),
+    path('reservations/', views.ReservationListView.as_view(), name='reservations'),
+    path('room/<int:pk>', views.RoomDetailView.as_view(), name='room-detail'),
+    path('reservation/<str:pk>', views.ReservationDetailView.as_view(), name='reservation-detail'),
 
     path('', HRS_APP_views.login, name='login'),
 
