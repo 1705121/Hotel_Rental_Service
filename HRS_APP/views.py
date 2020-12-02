@@ -145,8 +145,111 @@ def signupSubmit(request):
 
        
         
+class ProfileView(generic.TemplateView):
+    template_name = 'profile.html'
+    title = "Profile"
+    extra_context = {'title': title}
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.user.is_authenticated:
+            context['information'] = get_object_or_404(Staff, user=self.request.user)
+            context['user_information'] = self.request.user
+        else:
+            raise Http404("Your are not logged in.")
+        return context
 
 
+class ReservationListView(PermissionRequiredMixin, generic.ListView, generic.FormView):
+    """
+        View for list of reservations.
+        Implements generic ListView.
+        """
+    model = Reservation
+    # queryset field selects the objects to be displayed by the query.
+    # Here, the objects are displayed by reservation date time in descending order
+    queryset = Reservation.objects.all().order_by('-reservation_date_time')
+    title = _("Reservation List")
+    paginate_by = 5
+    allow_empty = True
+    form_class = CheckInRequestForm
+    success_url = reverse_lazy('check_in-list')
+    permission_required = 'main.can_view_reservation'
+    extra_context = {'title': title}
+
+    @transaction.atomic
+    def form_valid(self, form):
+        try:
+            with transaction.atomic():
+                checkin = form.save(commit=False)
+                checkin.user = self.request.user
+                checkin.save()
+        except IntegrityError:
+            raise Http404
+        return super().form_valid(form)
+
+
+class ReservationDetailView(PermissionRequiredMixin, generic.DetailView):
+    """
+    View for detail of reservation
+    Implements generic DetailView
+    """
+    model = Reservation
+    title = _("Reservation Information")
+    permission_required = 'main.can_view_reservation'
+    raise_exception = True
+    extra_context = {'title': title}
+
+class RoomListView(PermissionRequiredMixin, generic.ListView):
+    """
+    View for list of rooms.
+    Implements generic ListView.
+    """
+    model = Room  # Chooses the model for listing objects
+    paginate_by = 5  # By how many objects this has to be paginated
+    title = _("Room List")  # This is used for title and heading
+    permission_required = 'main.can_view_room'
+
+    # By default only objects of the model are sent as context
+    # However extra context can be passed using field extra_context
+    # Here title is passed.
+
+    extra_context = {'title': title}
+
+    # By default:
+    # template_name = room_list
+    # if you want to change it, use field template_name
+    # here don't do this, since it is already done as default.
+    # for own views, it can be done.
+
+    def get_queryset(self):
+        filter_value = self.request.GET.get('filter', 'all')
+        if filter_value == 'all':
+            filter_value = 0
+        elif filter_value == 'avail':
+            filter_value = 1
+        try:
+            new_context = Room.objects.filter(availability__in=[filter_value, 1])
+        except ValidationError:
+            raise Http404(_("Wrong filter argument given."))
+        return new_context
+
+    def get_context_data(self, **kwargs):
+        context = super(RoomListView, self).get_context_data(**kwargs)
+        context['filter'] = self.request.GET.get('filter', 'all')
+        return context
+
+
+class RoomDetailView(PermissionRequiredMixin, generic.DetailView):
+    """
+    View for detail of room
+    Implements generic DetailView
+    """
+    # The remaining are same as previous.
+    model = Room
+    title = _("Room Information")
+    permission_required = 'main.can_view_room'
+    extra_context = {'title': title}
 
 
 
